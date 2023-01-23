@@ -123,11 +123,15 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
         // Check if the length of the parameters it's the same, depending if it's for the RewardMultipliers or the WithdrawFees
         uint32 numberOfRewardMultipliers_ = uint32(rewardsMultiplierBlocks_.length);
         if (numberOfRewardMultipliers_ == 0) revert Pool_RewardMultipliersAmountZeroError();
-        if (numberOfRewardMultipliers_ != rewardsMultipliers_.length) revert Pool_InitializeRewardMultipliersParametersFormatError();
+        if (numberOfRewardMultipliers_ != rewardsMultipliers_.length) {
+            revert Pool_InitializeRewardMultipliersParametersFormatError();
+        }
 
         uint32 numberOfWithdrawFees_ = uint32(withdrawFeeBlocks_.length);
         //if (numberOfWithdrawFees == 0) revert Pool_WithdrawFeesAmountZeroError();
-        if (numberOfWithdrawFees_ != rewardsMultipliers_.length) revert Pool_InitializeWithdrawFeesParametersFormatError();
+        if (numberOfWithdrawFees_ != rewardsMultipliers_.length) {
+            revert Pool_InitializeWithdrawFeesParametersFormatError();
+        }
 
         // Set the value of the _depositAsset variable.
         _depositAsset = TheToken(asset_);
@@ -275,23 +279,18 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
     function deposit(uint128 amount_) external whenNotPaused nonReentrant {
         // Update the rewards per token.
         updateRewardsPerToken();
-        
+
         // Get the total deposit taking into account the deposit fee.
-        uint32 totalFee_ = uint32(_depositFee * MULTIPLIER/100);
-        uint32 depositedAmount_ = uint32(amount_ - ((amount_ * totalFee_)/MULTIPLIER));
+        uint32 totalFee_ = uint32(_depositFee * MULTIPLIER / 100);
+        uint32 depositedAmount_ = uint32(amount_ - ((amount_ * totalFee_) / MULTIPLIER));
         if (_depositAsset.balanceOf(msg.sender) < depositedAmount_) revert Pool_NotEnoughBalanceToDepositError();
 
-        // Transfer the deposit fee into the recipient address.  
+        // Transfer the deposit fee into the recipient address.
         bool success_ = _depositAsset.transferFrom(msg.sender, _depositFeeRecipient, amount_ - depositedAmount_);
         if (!success_) revert Pool_DepositFeeChargeFailedError();
 
         // Add the deposit.
-        _usersData[msg.sender].deposits.push(
-            DepositData(
-                uint64(block.number),
-                depositedAmount_
-            )
-        );
+        _usersData[msg.sender].deposits.push(DepositData(uint64(block.number), depositedAmount_));
 
         // Transfer the assets into the Pool.
         success_ = _depositAsset.transferFrom(msg.sender, address(this), depositedAmount_);
@@ -304,7 +303,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
         _totalAmount += depositedAmount_;
 
         // Update the next Deposit to be removed if it's the first Deposit of the User.
-        if ( _usersData[msg.sender].deposits.length == 1) {
+        if (_usersData[msg.sender].deposits.length == 1) {
             _usersData[msg.sender].nextDepositIdToRemove = 0;
         }
     }
@@ -316,14 +315,14 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
     function withdraw(uint128 amount_) external nonReentrant {
         // Update the rewards per token.
         updateRewardsPerToken();
-        
+
         // Check if the user has deposited enough amount as the requested to withdraw.
         if (_usersData[msg.sender].totalAmountDeposited < amount_) revert Pool_NotEnoughAmountDepositedError();
 
         // Check user's deposits in order to compute the amount to withdraw.
         uint128 withdrawAmount_;
         uint128 totalFee_;
-        for (uint32 i = _usersData[msg.sender].nextDepositIdToRemove; i < _usersData[msg.sender].deposits.length; i++ ) {
+        for (uint32 i = _usersData[msg.sender].nextDepositIdToRemove; i < _usersData[msg.sender].deposits.length; i++) {
             // If we haven't reach the total amount requested, we continue.
             if (withdrawAmount_ >= amount_) {
                 break;
@@ -334,8 +333,9 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
             uint128 depositAmount_ = _usersData[msg.sender].deposits[i].amount;
 
             // Compute the withdraw fee and the resulting amount of the deposit.
-            uint64 withdrawFee_ = uint64(_calcWithdrawFeePerBlock(_usersData[msg.sender].deposits[i].blockNumber) * MULTIPLIER/100);
-            uint128 depositAmountFeed_ = uint128(depositAmount_ - depositAmount_*withdrawFee_/MULTIPLIER);
+            uint64 withdrawFee_ =
+                uint64(_calcWithdrawFeePerBlock(_usersData[msg.sender].deposits[i].blockNumber) * MULTIPLIER / 100);
+            uint128 depositAmountFeed_ = uint128(depositAmount_ - depositAmount_ * withdrawFee_ / MULTIPLIER);
 
             // Check if the deposit can manage the full remaining amount of the withdrawal.
             if (depositAmountFeed_ > amountRem_) {
@@ -345,7 +345,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
                 // Update the withdrawAmount and the totalFee.
                 withdrawAmount_ += amountRem_;
-                totalFee_ += uint128((amountRem_ * withdrawFee_)/MULTIPLIER);
+                totalFee_ += uint128((amountRem_ * withdrawFee_) / MULTIPLIER);
 
                 continue;
             }
@@ -353,13 +353,13 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
             // Update user information regarding the deposit and the total amount deposited.
             _usersData[msg.sender].deposits[i].amount = 0;
             _usersData[msg.sender].totalAmountDeposited -= depositAmount_;
-            
+
             // Update the total deposited amount.
             _totalAmount -= depositAmount_;
 
             // Update the withdrawAmount and the totalFee.
             withdrawAmount_ += depositAmountFeed_;
-            totalFee_ += uint128((depositAmount_ * withdrawFee_)/MULTIPLIER);
+            totalFee_ += uint128((depositAmount_ * withdrawFee_) / MULTIPLIER);
 
             // This deposit it's no longer available. Update the nextDeposit to be removed.
             _usersData[msg.sender].nextDepositIdToRemove = i == _usersData[msg.sender].deposits.length - 1 ? i : i + 1;
@@ -370,7 +370,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
         bool success_ = _depositAsset.transferFrom(address(this), msg.sender, withdrawAmount_);
         if (!success_) revert Pool_AssetTransferFailedError();
 
-        // Transfer the withdraw fee into the recipient address.  
+        // Transfer the withdraw fee into the recipient address.
         success_ = _depositAsset.transferFrom(address(this), _depositFeeRecipient, totalFee_);
         if (!success_) revert Pool_WithdrawFeeChargeFailedError();
     }
@@ -403,7 +403,6 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
             2. Burns the Booster Pack.
             3. Set up the active Booster Pack to the user.
         */
-
     }
 
     /**
@@ -454,7 +453,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the _rewardsMultiplier multiplier.
-     * @param rewardsMultiplierId_ ID of the RewardsMultiplier.     
+     * @param rewardsMultiplierId_ ID of the RewardsMultiplier.
      */
     function getRewardsMultiplier(uint32 rewardsMultiplierId_) external view onlyOwner returns (uint64) {
         return _rewardsMultipliers[rewardsMultiplierId_].multiplier;
@@ -462,7 +461,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the _withdrawFees blockNumber.
-     * @param withdrawFeeId_ ID of the WithdrawFee.     
+     * @param withdrawFeeId_ ID of the WithdrawFee.
      */
     function getWithdrawFeeBlockNumber(uint32 withdrawFeeId_) external view onlyOwner returns (uint64) {
         return _withdrawFees[withdrawFeeId_].blockNumber;
@@ -470,7 +469,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the _rewardsPerToken fee.
-     * @param withdrawFeeId_ ID of the WithdrawFee.      
+     * @param withdrawFeeId_ ID of the WithdrawFee.
      */
     function getWithdrawFee(uint32 withdrawFeeId_) external view onlyOwner returns (uint64) {
         return _withdrawFees[withdrawFeeId_].fee;
@@ -478,7 +477,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the user accumRewards.
-     * @param user_ Address of the user.      
+     * @param user_ Address of the user.
      */
     function getUserAccumRewards(address user_) external view onlyOwner returns (uint64) {
         return _usersData[user_].accumRewards;
@@ -486,7 +485,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the user accumRewardsBP.
-     * @param user_ Address of the user.      
+     * @param user_ Address of the user.
      */
     function getUserAccumRewardsBP(address user_) external view onlyOwner returns (uint64) {
         return _usersData[user_].accumRewardsBP;
@@ -494,7 +493,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the user totalAmountDeposited.
-     * @param user_ Address of the user.      
+     * @param user_ Address of the user.
      */
     function getUserTotalAmountDeposited(address user_) external view onlyOwner returns (uint128) {
         return _usersData[user_].totalAmountDeposited;
@@ -502,7 +501,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the user activeBoosterPack.
-     * @param user_ Address of the user.      
+     * @param user_ Address of the user.
      */
     function getUserActiveBoosterPack(address user_) external view onlyOwner returns (uint128) {
         return _usersData[user_].activeBoosterPack;
@@ -510,7 +509,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the user nextDepositIdToRemove.
-     * @param user_ Address of the user.      
+     * @param user_ Address of the user.
      */
     function getUserNextDepositIdToRemove(address user_) external view onlyOwner returns (uint32) {
         return _usersData[user_].nextDepositIdToRemove;
@@ -518,8 +517,8 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the blockNumber of a specified deposit from a user.
-     * @param user_ Address of the user.     
-     * @param depositId_ ID of the deposit.          
+     * @param user_ Address of the user.
+     * @param depositId_ ID of the deposit.
      */
     function getUserDepositBlockNumber(address user_, uint32 depositId_) external view onlyOwner returns (uint64) {
         return _usersData[user_].deposits[depositId_].blockNumber;
@@ -527,8 +526,8 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Getter for the amount of a specified deposit from a user.
-     * @param user_ Address of the user.    
-     * @param depositId_ ID of the deposit.     
+     * @param user_ Address of the user.
+     * @param depositId_ ID of the deposit.
      */
     function getUserDepositAmount(address user_, uint32 depositId_) external view onlyOwner returns (uint128) {
         return _usersData[user_].deposits[depositId_].amount;
@@ -580,22 +579,22 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
         uint128 currentBlock_ = uint128(block.number);
 
         if (_totalAmount != 0) {
-            
             // Check current interval's rewards multiplier
             for (uint256 i = 0; i < _rewardsMultipliers.length; i++) {
-
                 RewardsMultiplier memory rewardMultiplier_;
                 rewardMultiplier_ = _rewardsMultipliers[i];
 
                 // If the current block fit's into the rewards multiplier period we use it's multiplier and break.
                 if (currentBlock_ <= rewardMultiplier_.blockNumber) {
-                    _rewardsPerToken += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier) * (currentBlock_ - _lastBlockUpdated) * MULTIPLIER / _totalAmount;
+                    _rewardsPerToken += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier)
+                        * (currentBlock_ - _lastBlockUpdated) * MULTIPLIER / _totalAmount;
                     _lastBlockUpdated = currentBlock_;
                     break;
                 }
                 // If the _lastBlockUpdated block fit's into the rewards multiplier period we use it's multiplier and continue until we reach the currentBlock.
                 else if (_lastBlockUpdated <= rewardMultiplier_.blockNumber) {
-                    _rewardsPerToken += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier) * (rewardMultiplier_.blockNumber - _lastBlockUpdated) * MULTIPLIER / _totalAmount;
+                    _rewardsPerToken += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier)
+                        * (rewardMultiplier_.blockNumber - _lastBlockUpdated) * MULTIPLIER / _totalAmount;
                     _lastBlockUpdated = rewardMultiplier_.blockNumber + 1;
                 }
             }

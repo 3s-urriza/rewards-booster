@@ -9,7 +9,9 @@ import "src/TheToken.sol";
 import "forge-std/Test.sol";
 import { console } from "forge-std/console.sol";
 
-contract PoolTest is Test { // TO-DO Fixture
+contract PoolTest is
+    Test // TO-DO Fixture
+{
     Pool public pool;
     Token1 public token1;
     Token2 public token2;
@@ -51,14 +53,15 @@ contract PoolTest is Test { // TO-DO Fixture
         withdrawFeeBlocks[0] = 0;
         withdrawFeeBlocks[1] = 100;
         withdrawFeeBlocks[2] = 1000;
-        withdrawFeeBlocks[3] = 10000;
+        withdrawFeeBlocks[3] = 10_000;
         uint64[] memory withdrawFees = new uint64[](4);
         withdrawFees[0] = 15;
         withdrawFees[1] = 10;
         withdrawFees[2] = 5;
         withdrawFees[3] = 2;
 
-        pool = new Pool(address(token1), deployer, 20, 10, rewardsMultiplierBlocks, rewardsMultipliers, withdrawFeeBlocks, withdrawFees);
+        pool =
+        new Pool(address(token1), deployer, 20, 10, rewardsMultiplierBlocks, rewardsMultipliers, withdrawFeeBlocks, withdrawFees);
 
         // Deal the accounts
         token1.mint(user1, 1000);
@@ -198,7 +201,7 @@ contract PoolTest is Test { // TO-DO Fixture
         vm.startPrank(user1);
 
         vm.expectRevert("Ownable: caller is not the owner");
-        pool.addWithdrawFee(10000, 2);
+        pool.addWithdrawFee(10_000, 2);
 
         vm.stopPrank();
 
@@ -210,11 +213,11 @@ contract PoolTest is Test { // TO-DO Fixture
 
         // Unhappy path Nº3 - Being the Owner and trying to add a withdraw fee with fee = 0.
         vm.expectRevert(abi.encodeWithSignature("Pool_WithdrawFeeZeroError()"));
-        pool.addWithdrawFee(10000, 0);
+        pool.addWithdrawFee(10_000, 0);
 
         // Happy path - Being the Owner and passing the correct parameters.
-        pool.addWithdrawFee(10000, 2);
-        assertEq(pool.getWithdrawFeeBlockNumber(4), 10000);
+        pool.addWithdrawFee(10_000, 2);
+        assertEq(pool.getWithdrawFeeBlockNumber(4), 10_000);
         assertEq(pool.getWithdrawFee(4), 2);
 
         vm.stopPrank();
@@ -428,7 +431,7 @@ contract PoolTest is Test { // TO-DO Fixture
         assertEq(pool.getUserDepositBlockNumber(user1, 0), block.number);
         assertEq(pool.getUserDepositAmount(user1, 0), 0);
         assertEq(pool.getUserDepositBlockNumber(user1, 1), block.number);
-        assertEq(pool.getUserDepositAmount(user1, 1), 75);               
+        assertEq(pool.getUserDepositAmount(user1, 1), 75);
 
         vm.stopPrank();
     }
@@ -462,7 +465,7 @@ contract PoolTest is Test { // TO-DO Fixture
         assertEq(pool.getUserDepositBlockNumber(user1, 1), block.number);
         assertEq(pool.getUserDepositAmount(user1, 1), 75);
         assertEq(pool.getUserDepositBlockNumber(user1, 2), block.number);
-        assertEq(pool.getUserDepositAmount(user1, 2), 180);                
+        assertEq(pool.getUserDepositAmount(user1, 2), 180);
 
         vm.stopPrank();
     }
@@ -494,7 +497,7 @@ contract PoolTest is Test { // TO-DO Fixture
         assertEq(pool.getUserDepositBlockNumber(user1, 0), 1);
         assertEq(pool.getUserDepositAmount(user1, 0), 0);
         assertEq(pool.getUserDepositBlockNumber(user1, 1), 150);
-        assertEq(pool.getUserDepositAmount(user1, 1), 255);              
+        assertEq(pool.getUserDepositAmount(user1, 1), 255);
 
         vm.stopPrank();
     }
@@ -528,9 +531,9 @@ contract PoolTest is Test { // TO-DO Fixture
         assertEq(pool.getUserDepositBlockNumber(user1, 0), 1);
         assertEq(pool.getUserDepositAmount(user1, 0), 0);
         assertEq(pool.getUserDepositBlockNumber(user1, 1), 150);
-        assertEq(pool.getUserDepositAmount(user1, 1), 0);      
+        assertEq(pool.getUserDepositAmount(user1, 1), 0);
         assertEq(pool.getUserDepositBlockNumber(user1, 2), 1050);
-        assertEq(pool.getUserDepositAmount(user1, 2), 42);           
+        assertEq(pool.getUserDepositAmount(user1, 2), 42);
 
         vm.stopPrank();
     }
@@ -548,13 +551,13 @@ contract PoolTest is Test { // TO-DO Fixture
 
         vm.startPrank(deployer);
 
-        assertEq(token1.balanceOf(user1), 98499);
+        assertEq(token1.balanceOf(user1), 98_499);
         assertEq(token1.balanceOf(address(pool)), 450);
         assertEq(token1.balanceOf(deployer), 50);
 
-        assertEq(pool.getRewardsPerToken(), 217777);
+        assertEq(pool.getRewardsPerToken(), 217_777);
         assertEq(pool.getLastBlockUpdated(), 50);
-        assertEq(pool.getUserAccumRewards(user1), 97999);
+        assertEq(pool.getUserAccumRewards(user1), 97_999);
         assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
@@ -573,7 +576,7 @@ contract PoolTest is Test { // TO-DO Fixture
 
         vm.roll(150);
         pool.claimRewards();
-        assertEq(token1.balanceOf(user1), 247499);
+        assertEq(token1.balanceOf(user1), 247_499);
         assertEq(token1.balanceOf(address(pool)), 450);
         assertEq(token1.balanceOf(deployer), 50);
 
@@ -581,9 +584,9 @@ contract PoolTest is Test { // TO-DO Fixture
 
         vm.startPrank(deployer);
 
-        assertEq(pool.getRewardsPerToken(), 548887);
+        assertEq(pool.getRewardsPerToken(), 548_887);
         assertEq(pool.getLastBlockUpdated(), 150);
-        assertEq(pool.getUserAccumRewards(user1), 246999);
+        assertEq(pool.getUserAccumRewards(user1), 246_999);
         assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
@@ -610,16 +613,16 @@ contract PoolTest is Test { // TO-DO Fixture
         vm.startPrank(deployer);
 
         assertEq(token1.balanceOf(user1), 500);
-        assertEq(token1.balanceOf(user2), 49499);
+        assertEq(token1.balanceOf(user2), 49_499);
         assertEq(token1.balanceOf(address(pool)), 900);
         assertEq(token1.balanceOf(deployer), 100);
 
-        assertEq(pool.getRewardsPerToken(), 108888);
+        assertEq(pool.getRewardsPerToken(), 108_888);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 0);
         assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
-        assertEq(pool.getUserAccumRewards(user2), 48999);
+        assertEq(pool.getUserAccumRewards(user2), 48_999);
         assertEq(pool.getUserAccumRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
@@ -650,29 +653,24 @@ contract PoolTest is Test { // TO-DO Fixture
 
         vm.startPrank(deployer);
 
-        assertEq(token1.balanceOf(user1), 123999);
-        assertEq(token1.balanceOf(user2), 49499);
+        assertEq(token1.balanceOf(user1), 123_999);
+        assertEq(token1.balanceOf(user2), 49_499);
         assertEq(token1.balanceOf(address(pool)), 900);
         assertEq(token1.balanceOf(deployer), 100);
 
-        assertEq(pool.getRewardsPerToken(), 274443);
+        assertEq(pool.getRewardsPerToken(), 274_443);
         assertEq(pool.getLastBlockUpdated(), 150);
-        assertEq(pool.getUserAccumRewards(user1), 123499);
+        assertEq(pool.getUserAccumRewards(user1), 123_499);
         assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
-        assertEq(pool.getUserAccumRewards(user2), 48999);
+        assertEq(pool.getUserAccumRewards(user2), 48_999);
         assertEq(pool.getUserAccumRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
         vm.stopPrank();
     }
 
-    function test_burnBP() public {
+    function test_burnBP() public { }
 
-    }
-
-    function test_pausePool() public {
-
-    }
-
+    function test_pausePool() public { }
 }

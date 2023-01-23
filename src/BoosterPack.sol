@@ -37,7 +37,8 @@ contract BoosterPack is ERC1155, Ownable {
      * @param expirationDate Expiration date of booster packs.
      * @param multiplier multiplier of booster packs.
      */
-    function mintBP(address to, uint256 id, uint64 duration, uint64 expirationDate, uint32 multiplier) external { // Rename mint
+    function mintBP(address to, uint256 id, uint64 duration, uint64 expirationDate, uint32 multiplier) external {
+        // Rename mint
         // Check if the address is allowed to mint.
         require(whitelistedAddrBP[msg.sender], "You are not allowed to mint."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToMintError
 
@@ -54,12 +55,13 @@ contract BoosterPack is ERC1155, Ownable {
      * @dev Burns a Booster Pack amount.
      * @param id ID of the booster pack.
      */
-    function burnBP(uint256 id) external { // Rename burn
+    function burnBP(uint256 id) external {
+        // Rename burn
         // Check if the address is allowed to burn.
         require(whitelistedAddrBP[msg.sender], "You are not allowed to burn."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToBurnError
 
         // Burns the Booster Pack (No need to check if the user it's the owner because the ERC1155 checks the balance of the caller).
-        _burn(msg.sender, id, 1);  // Amount
+        _burn(msg.sender, id, 1); // Amount
     }
 
     /**
