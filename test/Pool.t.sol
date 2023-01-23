@@ -159,11 +159,11 @@ contract PoolTest is
 
         // Unhappy path Nº3 - Being the Owner and trying to update a reward multiplier with blockNumber = 0.
         vm.expectRevert(abi.encodeWithSignature("Pool_BlockNumberZeroError()"));
-        pool.updateRewardsMultiplier(0, 500, 5);
+        pool.updateRewardsMultiplier(0, 0, 5);
 
         // Unhappy path Nº4 - Being the Owner and trying to update a reward multiplier with multiplier = 0.
         vm.expectRevert(abi.encodeWithSignature("Pool_RewardsMultiplierZeroError()"));
-        pool.updateRewardsMultiplier(0, 500, 5);
+        pool.updateRewardsMultiplier(0, 500, 0);
 
         // Happy path - Being the Owner and passing the correct parameters.
         pool.updateRewardsMultiplier(0, 500, 5);
