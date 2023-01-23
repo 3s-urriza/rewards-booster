@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import "src/ERC20/Token1.sol";
-import "src/ERC20/Token2.sol";
+import "test/mocks/Token1.sol";
+import "test/mocks/Token2.sol";
 import "src/Pool.sol";
 import "src/TheToken.sol";
 

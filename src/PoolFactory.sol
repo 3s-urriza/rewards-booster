@@ -1,30 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-contract PoolFactory {
+import "src/Pool.sol";
+
+import { Ownable } from "@openzeppelin/access/Ownable.sol";
+
+contract PoolFactory is Ownable {
+    event PoolCreated(
+        address indexed asset, address depositFeeRecipient, uint32 baseRateTokensPerBlock, uint32 depositFee
+    );
+
     constructor() { }
 
     /**
      * @dev Creates a new pool for the specified asset.
-     * @param asset Asset for the new pool.
-     * @param baseRateTokensPerBlock baseRateTokensPerBlock for the new pool.
-     * @param depositFee depositFee for the new pool.
-     * @param rewardsMultiplierBlocks for the new pool.
-     * @param rewardsMultipliers for the new pool.
-     * @param withdrawFeeBlocks for the new pool.
-     * @param withdrawFees Token for the new pool.
+     * @param asset_ Asset for the new pool.
+     * @param depositFeeRecipient_ depositFeeRecipient for the new pool.
+     * @param baseRateTokensPerBlock_ baseRateTokensPerBlock for the new pool.
+     * @param depositFee_ depositFee for the new pool.
+     * @param rewardsMultiplierBlocks_ for the new pool.
+     * @param rewardsMultipliers_ for the new pool.
+     * @param withdrawFeeBlocks_ for the new pool.
+     * @param withdrawFees_ Token for the new pool.
      */
     function createPool(
-        address asset,
-        uint32 baseRateTokensPerBlock,
-        uint32 depositFee,
-        uint32[] memory rewardsMultiplierBlocks,
-        uint32[] memory rewardsMultipliers,
-        uint32[] memory withdrawFeeBlocks,
-        uint64[] memory withdrawFees
-    ) external {
-        /*
-            1. Creates the pool.
-        */
+        address asset_,
+        address depositFeeRecipient_,
+        uint32 baseRateTokensPerBlock_,
+        uint32 depositFee_,
+        uint64[] memory rewardsMultiplierBlocks_,
+        uint64[] memory rewardsMultipliers_,
+        uint64[] memory withdrawFeeBlocks_,
+        uint64[] memory withdrawFees_
+    ) external onlyOwner returns (address newPool) {
+        // Create the Pool.
+        newPool = address(
+            new Pool(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_, rewardsMultiplierBlocks_, rewardsMultipliers_, withdrawFeeBlocks_, withdrawFees_)
+        );
+
+        emit PoolCreated(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_);
     }
 }
