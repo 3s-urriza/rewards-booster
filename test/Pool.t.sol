@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import "src/ERC20/Token1.sol";
-import "src/ERC20/Token2.sol";
+import "test/mocks/Token1.sol";
 import "src/Pool.sol";
 import "src/TheToken.sol";
 
@@ -14,7 +13,6 @@ contract PoolTest is
 {
     Pool public pool;
     Token1 public token1;
-    Token2 public token2;
 
     address public deployer = vm.addr(1500);
     address public user1 = vm.addr(1501);
@@ -33,7 +31,6 @@ contract PoolTest is
         vm.startPrank(deployer);
 
         token1 = new Token1();
-        token2 = new Token2();
 
         // Set the initial data
         // RewardsMultiplier
@@ -68,11 +65,6 @@ contract PoolTest is
         token1.mint(user2, 1000);
         token1.mint(user3, 1000);
         token1.mint(user4, 1000);
-
-        token2.mint(user1, 1000);
-        token2.mint(user2, 1000);
-        token2.mint(user3, 1000);
-        token2.mint(user4, 1000);
 
         vm.stopPrank();
     }
