@@ -14,7 +14,7 @@ error Pool_RewardsMultiplierDoesNotExistError();
 error Pool_WithdrawFeeDoesNotExistError();
 error Pool_RewardMultipliersAmountZeroError();
 error Pool_InitializeRewardMultipliersParametersFormatError();
-error Pool_WithdrawFeesZeroAmountError();
+error Pool_WithdrawFeesAmountZeroError();
 error Pool_InitializeWithdrawFeesParametersFormatError();
 error Pool_BlockNumberZeroError();
 error Pool_RewardsMultiplierZeroError();
@@ -87,7 +87,6 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
     /// @dev Constant to avoid divisions resulting in 0
     uint128 public constant MULTIPLIER = 1000;
 
-    TheToken private _token;
     BoosterPack private _boosterPacks;
 
     // *** Modifiers ***
@@ -128,7 +127,7 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
         }
 
         uint32 numberOfWithdrawFees_ = uint32(withdrawFeeBlocks_.length);
-        //if (numberOfWithdrawFees == 0) revert Pool_WithdrawFeesAmountZeroError();
+        if (numberOfWithdrawFees_ == 0) revert Pool_WithdrawFeesAmountZeroError();
         if (numberOfWithdrawFees_ != rewardsMultipliers_.length) {
             revert Pool_InitializeWithdrawFeesParametersFormatError();
         }
