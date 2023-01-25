@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "src/interfaces/IBoosterPack.sol";
+
 import "@openzeppelin/token/ERC1155/ERC1155.sol";
 import { Ownable } from "@openzeppelin/access/Ownable.sol";
 
@@ -8,7 +10,7 @@ import { Ownable } from "@openzeppelin/access/Ownable.sol";
 error BoosterPack_AddressNotAllowedToMintError();
 error BoosterPack_AddressNotAllowedToBurnError();
 
-contract BoosterPack is ERC1155, Ownable {
+contract BoosterPack is ERC1155, IBoosterPack, Ownable {
     /// @notice ERC1155.
     string baseURI;
 
@@ -23,43 +25,10 @@ contract BoosterPack is ERC1155, Ownable {
     mapping(uint32 => Attributes) boosterPack;
 
     ///@notice Mapping to store the whitelisted addresses that can interact with the Booster Packs.
-    mapping(address => bool) private whitelistedAddrBP;
+    mapping(address => bool) private whitelistedAddrBP; // TO-DO Add one for minting and another for burning
 
     constructor(string memory _baseURI) ERC1155(_baseURI) {
-        baseURI = _baseURI;
-    }
-
-    /**
-     * @dev Mints a Booster Pack amount.
-     * @param to Receiver of the booster pack.
-     * @param id ID of the booster pack.
-     * @param duration Duration of booster packs.
-     * @param expirationDate Expiration date of booster packs.
-     * @param multiplier multiplier of booster packs.
-     */
-    function mintBP(address to, uint256 id, uint64 duration, uint64 expirationDate, uint32 multiplier) external {
-        // Check if the address is allowed to mint.
-        require(whitelistedAddrBP[msg.sender], "You are not allowed to mint."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToMintError
-
-        // Mint the Booster Pack.
-        _mint(to, id, 1, "");
-
-        // Update the boosterPack mapping.
-        boosterPack[uint32(id)].duration = duration;
-        boosterPack[uint32(id)].expirationDate = expirationDate;
-        boosterPack[uint32(id)].multiplier = multiplier;
-    }
-
-    /**
-     * @dev Burns a Booster Pack.
-     * @param id ID of the booster pack.
-     */
-    function burnBP(uint256 id) external {
-        // Check if the address is allowed to burn.
-        require(whitelistedAddrBP[msg.sender], "You are not allowed to burn."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToBurnError
-
-        // Burns the Booster Pack (No need to check if the user it's the owner because the ERC1155 checks the balance of the caller).
-        _burn(msg.sender, id, 1);
+        baseURI = _baseURI; // Check if needed, setUri onlyOwner
     }
 
     /**
@@ -78,6 +47,41 @@ contract BoosterPack is ERC1155, Ownable {
     function removeWhitelistedAddrBP(address addr) external onlyOwner {
         // Remove the address to the whitelistedAddrBP mapping.
         whitelistedAddrBP[addr] = false;
+    }
+
+    /**
+     * @dev Mints a Booster Pack amount.
+     * @param to Receiver of the booster pack.
+     * @param id ID of the booster pack.
+     * @param duration Duration of booster packs.
+     * @param expirationDate Expiration date of booster packs.
+     * @param multiplier multiplier of booster packs.
+     */
+    function mintBP(address to, uint256 id, uint64 duration, uint64 expirationDate, uint32 multiplier) external {
+        // Rename mint
+        // Check if the address is allowed to mint.
+        require(whitelistedAddrBP[msg.sender], "You are not allowed to mint."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToMintError
+
+        // Mint the Booster Pack.
+        _mint(to, id, 1, ""); // Amount
+
+        // Update the boosterPack mapping.
+        boosterPack[uint32(id)].duration = duration;
+        boosterPack[uint32(id)].expirationDate = expirationDate;
+        boosterPack[uint32(id)].multiplier = multiplier;
+    }
+
+    /**
+     * @dev Burns a Booster Pack amount.
+     * @param id ID of the booster pack.
+     */
+    function burnBP(uint256 id) external {
+        // Rename burn
+        // Check if the address is allowed to burn.
+        require(whitelistedAddrBP[msg.sender], "You are not allowed to burn."); // TO-DO Custom Error BoosterPack_AddressNotAllowedToBurnError
+
+        // Burns the Booster Pack (No need to check if the user it's the owner because the ERC1155 checks the balance of the caller).
+        _burn(msg.sender, id, 1); // Amount
     }
 
     /**
