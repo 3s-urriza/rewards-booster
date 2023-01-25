@@ -2,8 +2,7 @@
 pragma solidity ^0.8.16;
 
 interface IPool {
-
-    // Pool Parameters 
+    // Pool Parameters
     function updateBaseRateTokensPerBlock(uint32) external;
 
     function updateDepositFee(uint32) external;
@@ -30,5 +29,4 @@ interface IPool {
     function burnBP(uint32) external;
 
     function pausePool() external;
-
 }

@@ -152,7 +152,7 @@ contract PoolManagerTest is Test {
             withdrawFeeBlocks,
             withdrawFees
         );
-        poolManager.addWhitelistedToken(address(token1));     
+        poolManager.addWhitelistedToken(address(token1));
 
         // Happy path - Being the Owner and the token is whitelisted.
         poolManager.createPool(
@@ -181,8 +181,8 @@ contract PoolManagerTest is Test {
     function test_createMultiplePools() public {
         vm.startPrank(deployer);
 
-        poolManager.addWhitelistedToken(address(token1));     
-        poolManager.addWhitelistedToken(address(token2));     
+        poolManager.addWhitelistedToken(address(token1));
+        poolManager.addWhitelistedToken(address(token2));
 
         // Happy path - Being the Owner and the token is whitelisted.
         poolManager.createPool(
@@ -226,8 +226,8 @@ contract PoolManagerTest is Test {
         // Set up
         vm.startPrank(deployer);
 
-        poolManager.addWhitelistedToken(address(token1));     
-        poolManager.addWhitelistedToken(address(token2));     
+        poolManager.addWhitelistedToken(address(token1));
+        poolManager.addWhitelistedToken(address(token2));
 
         poolManager.createPool(
             address(token1),
@@ -281,5 +281,4 @@ contract PoolManagerTest is Test {
 
         vm.stopPrank();
     }
-
 }

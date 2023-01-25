@@ -2,7 +2,6 @@
 pragma solidity ^0.8.16;
 
 interface IBoosterPack {
-
     function addWhitelistedAddrBP(address) external;
 
     function removeWhitelistedAddrBP(address) external;

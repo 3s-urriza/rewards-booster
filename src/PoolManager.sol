@@ -24,7 +24,7 @@ contract PoolManager is IPoolManager, Ownable {
     ///@notice BoosterPack
     BoosterPack private _boosterPack;
 
-    constructor() { 
+    constructor() {
         _poolFactory = new PoolFactory();
 
         string memory _baseURI = "";
@@ -75,7 +75,14 @@ contract PoolManager is IPoolManager, Ownable {
 
         // Create the Pool.
         address newPool_ = _poolFactory.createPool(
-            token_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_, rewardsMultiplierBlocks_, rewardsMultipliers_, withdrawFeeBlocks_, withdrawFees_
+            token_,
+            depositFeeRecipient_,
+            baseRateTokensPerBlock_,
+            depositFee_,
+            rewardsMultiplierBlocks_,
+            rewardsMultipliers_,
+            withdrawFeeBlocks_,
+            withdrawFees_
         );
 
         // Add the Pool to the array of pools.
