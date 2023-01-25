@@ -545,7 +545,7 @@ contract PoolTest is
         token1.approve(address(pool), 500);
         pool.deposit(500);
         vm.roll(50);
-        pool.claimRewards();
+        pool.claimRewards(user1);
 
         vm.stopPrank();
 
@@ -572,10 +572,10 @@ contract PoolTest is
         pool.deposit(500);
 
         vm.roll(50);
-        pool.claimRewards();
+        pool.claimRewards(user1);
 
         vm.roll(150);
-        pool.claimRewards();
+        pool.claimRewards(user1);
         assertEq(token1.balanceOf(user1), 247_499);
         assertEq(token1.balanceOf(address(pool)), 450);
         assertEq(token1.balanceOf(deployer), 50);
@@ -606,7 +606,7 @@ contract PoolTest is
         token1.approve(address(pool), 500);
         pool.deposit(500);
         vm.roll(50);
-        pool.claimRewards();
+        pool.claimRewards(user2);
 
         vm.stopPrank();
 
@@ -642,13 +642,10 @@ contract PoolTest is
         token1.approve(address(pool), 500);
         pool.deposit(500);
         vm.roll(50);
-        pool.claimRewards();
+        pool.claimRewards(user2);
 
-        vm.stopPrank();
-
-        vm.startPrank(user1);
         vm.roll(150);
-        pool.claimRewards();
+        pool.claimRewards(user1);
         vm.stopPrank();
 
         vm.startPrank(deployer);

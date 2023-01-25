@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "src/interfaces/IPool.sol";
 import "src/TheToken.sol";
 import "src/BoosterPack.sol";
 
@@ -25,7 +26,7 @@ error Pool_NotEnoughAmountDepositedError();
 error Pool_NotEnoughBalanceToDepositError();
 error Pool_AssetTransferFailedError();
 
-contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
+contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     /// @notice Struct to store the information about the Rewards Multiplier.
     struct RewardsMultiplier {
         uint64 blockNumber; // Block number of the RewardsMultiplier.
@@ -376,21 +377,22 @@ contract Pool is Pausable, Ownable, ReentrancyGuard, ERC4626 {
     }
 
     /**
-     * @dev Claim rewards for a specific deposit.
+     * @dev Claim rewards for a specific user.
+     * @param depositor_ Address from the user.
      */
-    function claimRewards() external nonReentrant {
+    function claimRewards(address depositor_) external nonReentrant {
         // Update the rewards per token.
         updateRewardsPerToken();
 
         // Check user's deposits in order to compute the total rewards accumulated.
-        uint64 userTotalRewards_ = uint64(_rewardsPerToken * _usersData[msg.sender].totalAmountDeposited / MULTIPLIER);
-        uint64 userClaimableRewards = uint64(userTotalRewards_ - _usersData[msg.sender].accumRewards);
+        uint64 userTotalRewards_ = uint64(_rewardsPerToken * _usersData[depositor_].totalAmountDeposited / MULTIPLIER);
+        uint64 userClaimableRewards = uint64(userTotalRewards_ - _usersData[depositor_].accumRewards);
 
         // Update the user's accumulated rewards.
-        _usersData[msg.sender].accumRewards = userTotalRewards_;
+        _usersData[depositor_].accumRewards = userTotalRewards_;
 
         // Mint the tokens to the user.
-        _depositAsset.mint(msg.sender, userClaimableRewards);
+        _depositAsset.mint(depositor_, userClaimableRewards);
     }
 
     /**

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "src/interfaces/IPoolFactory.sol";
 import "src/Pool.sol";
 
 import { Ownable } from "@openzeppelin/access/Ownable.sol";
 
-contract PoolFactory is Ownable {
+contract PoolFactory is IPoolFactory, Ownable {
     event PoolCreated(
         address indexed asset, address depositFeeRecipient, uint32 baseRateTokensPerBlock, uint32 depositFee
     );
@@ -33,10 +34,17 @@ contract PoolFactory is Ownable {
         uint64[] memory withdrawFeeBlocks_,
         uint64[] memory withdrawFees_
     ) external onlyOwner returns (address newPool) {
-        // Create the Pool.
+        // Create the Pool. // TO-DO Use CREATE2 instead of new
         newPool = address(
             new Pool(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_, rewardsMultiplierBlocks_, rewardsMultipliers_, withdrawFeeBlocks_, withdrawFees_)
         );
+
+        /*assembly {
+            newPool := create2(0, add(code, 0x20), mload(code), salt)
+            if iszero(extcodesize(newPool)) {
+                revert(0, 0)
+            }
+        }*/
 
         emit PoolCreated(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_);
     }

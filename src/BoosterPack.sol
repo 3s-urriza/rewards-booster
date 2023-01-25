@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "src/interfaces/IBoosterPack.sol";
+
 import "@openzeppelin/token/ERC1155/ERC1155.sol";
 import { Ownable } from "@openzeppelin/access/Ownable.sol";
 
@@ -8,7 +10,7 @@ import { Ownable } from "@openzeppelin/access/Ownable.sol";
 error BoosterPack_AddressNotAllowedToMintError();
 error BoosterPack_AddressNotAllowedToBurnError();
 
-contract BoosterPack is ERC1155, Ownable {
+contract BoosterPack is ERC1155, IBoosterPack, Ownable {
     /// @notice ERC1155.
     string baseURI;
 
@@ -27,6 +29,24 @@ contract BoosterPack is ERC1155, Ownable {
 
     constructor(string memory _baseURI) ERC1155(_baseURI) {
         baseURI = _baseURI; // Check if needed, setUri onlyOwner
+    }
+
+    /**
+     * @dev Adds a whitelisted address.
+     * @param addr Address to be whitelisted.
+     */
+    function addWhitelistedAddrBP(address addr) external onlyOwner {
+        // Add the address to the whitelistedAddrBP mapping.
+        whitelistedAddrBP[addr] = true;
+    }
+
+    /**
+     * @dev Removes a whitelisted address.
+     * @param addr Address to be removed from being whitelisted.
+     */
+    function removeWhitelistedAddrBP(address addr) external onlyOwner {
+        // Remove the address to the whitelistedAddrBP mapping.
+        whitelistedAddrBP[addr] = false;
     }
 
     /**
@@ -62,24 +82,6 @@ contract BoosterPack is ERC1155, Ownable {
 
         // Burns the Booster Pack (No need to check if the user it's the owner because the ERC1155 checks the balance of the caller).
         _burn(msg.sender, id, 1); // Amount
-    }
-
-    /**
-     * @dev Adds a whitelisted address.
-     * @param addr Address to be whitelisted.
-     */
-    function addWhitelistedAddrBP(address addr) external onlyOwner {
-        // Add the address to the whitelistedAddrBP mapping.
-        whitelistedAddrBP[addr] = true;
-    }
-
-    /**
-     * @dev Removes a whitelisted address.
-     * @param addr Address to be removed from being whitelisted.
-     */
-    function removeWhitelistedAddrBP(address addr) external onlyOwner {
-        // Remove the address to the whitelistedAddrBP mapping.
-        whitelistedAddrBP[addr] = false;
     }
 
     /**
