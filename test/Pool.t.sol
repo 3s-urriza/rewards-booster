@@ -4,6 +4,7 @@ pragma solidity ^0.8.16;
 import "test/mocks/Token1.sol";
 import "test/mocks/Token2.sol";
 import "src/Pool.sol";
+import "src/BoosterPack.sol";
 import "src/TheToken.sol";
 
 import "forge-std/Test.sol";
@@ -13,6 +14,7 @@ contract PoolTest is
     Test // TO-DO Fixture
 {
     Pool public pool;
+    BoosterPack public boosterPack;
     Token1 public token1;
     Token2 public token2;
 
@@ -34,6 +36,7 @@ contract PoolTest is
 
         token1 = new Token1();
         token2 = new Token2();
+        boosterPack = new BoosterPack("");
 
         // Set the initial data
         // RewardsMultiplier
@@ -61,7 +64,7 @@ contract PoolTest is
         withdrawFees[3] = 2;
 
         pool =
-        new Pool(address(token1), deployer, 20, 10, rewardsMultiplierBlocks, rewardsMultipliers, withdrawFeeBlocks, withdrawFees);
+        new Pool(address(token1), deployer, 20, 10, rewardsMultiplierBlocks, rewardsMultipliers, withdrawFeeBlocks, withdrawFees, address(boosterPack));
 
         // Deal the accounts
         token1.mint(user1, 1000);
@@ -300,6 +303,7 @@ contract PoolTest is
 
         assertEq(pool.getUserAccumRewards(user1), 0);
         assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 0);
@@ -328,7 +332,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 100);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 900);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 0);
@@ -360,7 +365,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 100);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 900);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 0);
@@ -395,7 +401,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 95);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 0);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 0);
@@ -424,7 +431,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 144);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 75);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 1);
@@ -456,7 +464,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 164);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 255);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 1);
@@ -490,7 +499,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 154);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 255);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 1);
@@ -524,7 +534,8 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 160);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 42);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
         assertEq(pool.getUserNextDepositIdToRemove(user1), 2);
@@ -558,7 +569,8 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 217_777);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 97_999);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
         vm.stopPrank();
@@ -587,7 +599,8 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 548_887);
         assertEq(pool.getLastBlockUpdated(), 150);
         assertEq(pool.getUserAccumRewards(user1), 246_999);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
         vm.stopPrank();
@@ -620,10 +633,12 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 108_888);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
         assertEq(pool.getUserAccumRewards(user2), 48_999);
-        assertEq(pool.getUserAccumRewardsBP(user2), 0);
+        assertEq(pool.getUserAccumRewardsBP(user2), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
         vm.stopPrank();
@@ -658,16 +673,217 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 274_443);
         assertEq(pool.getLastBlockUpdated(), 150);
         assertEq(pool.getUserAccumRewards(user1), 123_499);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
         assertEq(pool.getUserAccumRewards(user2), 48_999);
-        assertEq(pool.getUserAccumRewardsBP(user2), 0);
+        assertEq(pool.getUserAccumRewardsBP(user2), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
         vm.stopPrank();
     }
 
-    function test_burnBP() public { }
+    function test_claimRewards_withBoosterPack() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 100, 1000, 3);
+
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+
+        token1.approve(address(pool), 500);
+        pool.deposit(500);
+        boosterPack.setApprovalForAll(address(pool), true);
+        pool.burnBP(1);
+        vm.roll(50);
+        pool.claimRewards(user1);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 392_496);
+        assertEq(token1.balanceOf(address(pool)), 450);
+        assertEq(token1.balanceOf(deployer), 50);
+
+        assertEq(pool.getRewardsPerToken(), 217_777);
+        assertEq(pool.getLastBlockUpdated(), 50);
+        assertEq(pool.getUserAccumRewards(user1), 97_999);
+        assertEq(pool.getUserAccumRewardsBP(user1), 293_997);
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 450);
+        assertEq(pool.getUserActiveBoosterPack(user1), 1);
+        assertEq(pool.getUsersWithBoosterPacks(0), user1);
+        assertEq(pool.getRewardsPerTokenBoosterPack(user1), 217_777);
+
+        vm.stopPrank();
+    }
+
+    function test_claimRewards_withBoosterPack_lateActivation() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 100, 1000, 3);
+
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+
+        token1.approve(address(pool), 500);
+        pool.deposit(500);
+        boosterPack.setApprovalForAll(address(pool), true);
+        vm.roll(50);
+        pool.burnBP(1);
+        vm.roll(99);
+        pool.claimRewards(user1);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 490_496);
+        assertEq(token1.balanceOf(address(pool)), 450);
+        assertEq(token1.balanceOf(deployer), 50);
+
+        assertEq(pool.getRewardsPerToken(), 435_554);
+        assertEq(pool.getLastBlockUpdated(), 99);
+        assertEq(pool.getUserAccumRewards(user1), 195_999);
+        assertEq(pool.getUserAccumRewardsBP(user1), 293_997);
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 450);
+        assertEq(pool.getUserActiveBoosterPack(user1), 1);
+        assertEq(pool.getUsersWithBoosterPacks(0), user1);
+        assertEq(pool.getRewardsPerTokenBoosterPack(user1), 217_777);
+
+        vm.stopPrank();
+    }
+
+    function test_claimRewards_withEndedBoosterPack() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 100, 1000, 3);
+
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+
+        token1.approve(address(pool), 500);
+        pool.deposit(500);
+        boosterPack.setApprovalForAll(address(pool), true);
+        pool.burnBP(1);
+        vm.roll(150);
+        pool.claimRewards(user1);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 841_499);
+        assertEq(token1.balanceOf(address(pool)), 450);
+        assertEq(token1.balanceOf(deployer), 50);
+
+        assertEq(pool.getRewardsPerToken(), 548_888);
+        assertEq(pool.getLastBlockUpdated(), 150);
+        assertEq(pool.getUserAccumRewards(user1), 246_999);
+        assertEq(pool.getUserAccumRewardsBP(user1), 594_000);
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 450);
+        assertEq(pool.getUserActiveBoosterPack(user1), 0);
+        assertEq(pool.getUsersWithBoosterPacks(0), address(0));
+        assertEq(pool.getRewardsPerTokenBoosterPack(user1), 440_000);
+
+        vm.stopPrank();
+    }
+
+    function test_claimRewards_withBoosterPack_multipleDeposits() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 100, 1000, 3);
+
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+
+        token1.approve(address(pool), 1000);
+        pool.deposit(500);
+        boosterPack.setApprovalForAll(address(pool), true);
+        pool.burnBP(1);
+        vm.roll(50);
+        pool.deposit(300);
+        pool.claimRewards(user1);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 627_396);
+        assertEq(token1.balanceOf(address(pool)), 720);
+        assertEq(token1.balanceOf(deployer), 80);
+
+        assertEq(pool.getRewardsPerToken(), 217_777);
+        assertEq(pool.getLastBlockUpdated(), 50);
+        assertEq(pool.getUserAccumRewards(user1), 156_799);
+        assertEq(pool.getUserAccumRewardsBP(user1), 470_397);
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 720);
+        assertEq(pool.getUserActiveBoosterPack(user1), 1);
+        assertEq(pool.getUsersWithBoosterPacks(0), user1);
+        assertEq(pool.getRewardsPerTokenBoosterPack(user1), 217_777);
+
+        vm.stopPrank();
+    }
+
+    function test_burnBP() public { 
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 50, 100, 3);
+        boosterPack.mint(user1, 2, 1, 50, 200, 3);
+
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+
+        // Unhappy path Nº1 - Trying to burn a BoosterPack that does not exist.
+        vm.expectRevert(abi.encodeWithSignature("Pool_BPDoesNotExistBPError()"));
+        pool.burnBP(3);
+
+        // Unhappy path Nº2 - Trying to burn a BoosterPack that has already expired.
+        vm.roll(150);
+        vm.expectRevert(abi.encodeWithSignature("Pool_ExpiredBPError()"));
+        pool.burnBP(1);
+
+        // Happy path - BoosterPack exists, not expired and the user does not have an active BP.
+        boosterPack.setApprovalForAll(address(pool), true);
+        pool.burnBP(2);
+
+        // Unhappy path Nº3 - Trying to burn a BoosterPack when the user has already one active.
+        vm.expectRevert(abi.encodeWithSignature("Pool_OnlyOneActiveBPError()"));
+        pool.burnBP(1);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(pool.getUserActiveBoosterPack(user1), 2);
+
+        vm.stopPrank();
+    }
 
     function test_pausePool() public { }
 }

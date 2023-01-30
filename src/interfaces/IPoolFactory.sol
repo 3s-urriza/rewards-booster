@@ -10,6 +10,7 @@ interface IPoolFactory {
         uint64[] memory,
         uint64[] memory,
         uint64[] memory,
-        uint64[] memory
+        uint64[] memory,
+        address
     ) external returns (address);
 }

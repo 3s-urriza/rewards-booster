@@ -58,7 +58,7 @@ contract BoosterPackTest is Test {
 
         vm.stopPrank();
 
-        // Happy path - Being the Owner
+        // Happy path - Being the Owner.
         vm.startPrank(deployer);
 
         boosterPack.addWhitelistedAddrBP(user1);
@@ -70,28 +70,52 @@ contract BoosterPackTest is Test {
         vm.stopPrank();
     }
 
-    function test_mintBP() public {
+    function test_setAttributes() public {
+        // Set up
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
+        
+        // Unhappy path Nº1 - Trying to change a BoosterPack attributes without being the Owner.
+        vm.startPrank(user1);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        boosterPack.setAttributes(1, 7 days, uint64(block.timestamp + 30 days), 2);
+
+        vm.stopPrank();
+
+        // Happy path - Being the Owner.
+        vm.startPrank(deployer);
+
+        boosterPack.setAttributes(1, 8 days, uint64(block.timestamp + 60 days), 3);
+        assertEq(boosterPack.getDuration(1), 8 days);
+        assertEq(boosterPack.getExpirationDate(1), uint64(block.timestamp + 60 days));
+        assertEq(boosterPack.getMultiplier(1), 3);
+
+        vm.stopPrank();
+    }
+
+    function test_mint() public {
         // Unhappy path Nº1 - Trying to mint a Booster Pack without being whitelisted.
         vm.startPrank(deployer);
 
-        vm.expectRevert("You are not allowed to mint.");
-        boosterPack.mintBP(deployer, 1, 7 days, uint64(block.timestamp + 30 days), 2);
+        vm.expectRevert(abi.encodeWithSignature("BoosterPack_AddressNotAllowedToMintError()"));
+        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
 
         // Happy path - Mint a Booster Pack being whitelisted.
         boosterPack.addWhitelistedAddrBP(deployer);
-        boosterPack.mintBP(deployer, 1, 7 days, uint64(block.timestamp + 30 days), 2);
+        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
 
         assertEq(boosterPack.balanceOf(deployer, 1), 1);
 
         vm.stopPrank();
     }
 
-    function test_burnBP() public {
+    function test_burn() public {
         // Set up
         vm.startPrank(deployer);
 
         boosterPack.addWhitelistedAddrBP(deployer);
-        boosterPack.mintBP(deployer, 1, 7 days, uint64(block.timestamp + 30 days), 2);
+        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
         assertEq(boosterPack.balanceOf(deployer, 1), 1);
 
         vm.stopPrank();
@@ -99,15 +123,15 @@ contract BoosterPackTest is Test {
         // Unhappy path Nº1 - Trying to burn a Booster Pack a Booster Pack without being whitelisted.
         vm.startPrank(user1);
 
-        vm.expectRevert("You are not allowed to burn.");
-        boosterPack.burnBP(1);
+        vm.expectRevert(abi.encodeWithSignature("BoosterPack_AddressNotAllowedToBurnError()"));
+        boosterPack.burn(1, 1);
 
         vm.stopPrank();
 
         // Happy path - Burn a Booster Pack being whitelisted.
         vm.startPrank(deployer);
 
-        boosterPack.burnBP(1);
+        boosterPack.burn(1, 1);
         assertEq(boosterPack.balanceOf(deployer, 1), 0);
 
         vm.stopPrank();

@@ -6,6 +6,7 @@ import "test/mocks/Token2.sol";
 import "src/PoolManager.sol";
 import "src/BoosterPack.sol";
 import "src/interfaces/IPool.sol";
+import "src/Pool.sol";
 
 import "forge-std/Test.sol";
 import { console } from "forge-std/console.sol";
@@ -167,7 +168,7 @@ contract PoolManagerTest is Test {
         );
         assertEq(poolManager.getPools().length, 1);
         address poolAddressToken1_ = poolManager.getPools()[0];
-        //assertTrue(poolManager.getPools()[0].supportsInterface(type(IPool).interfaceId));
+        assertTrue(Pool(poolManager.getPools()[0]).supportsInterface(type(IPool).interfaceId));
 
         vm.stopPrank();
 
@@ -208,9 +209,8 @@ contract PoolManagerTest is Test {
         address poolAddressToken1_ = poolManager.getPools()[0];
         address poolAddressToken2_ = poolManager.getPools()[1];
 
-        // IERC165 registerInterface vs mapping to store addresses of new Pools in PoolFactory (as Maple)
-        //assertTrue(poolManager.getPools()[0].supportsInterface(type(IPool).interfaceId));
-        //assertTrue(poolManager.getPools()[1].supportsInterface(type(IPool).interfaceId));
+        assertTrue(Pool(poolManager.getPools()[0]).supportsInterface(type(IPool).interfaceId));
+        assertTrue(Pool(poolManager.getPools()[1]).supportsInterface(type(IPool).interfaceId));
 
         vm.stopPrank();
 

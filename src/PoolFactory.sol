@@ -23,6 +23,7 @@ contract PoolFactory is IPoolFactory, Ownable {
      * @param rewardsMultipliers_ for the new pool.
      * @param withdrawFeeBlocks_ for the new pool.
      * @param withdrawFees_ Token for the new pool.
+     * @param boosterPacksAddress_ Address of the BoosterPack contract.
      */
     function createPool(
         address asset_,
@@ -32,15 +33,18 @@ contract PoolFactory is IPoolFactory, Ownable {
         uint64[] memory rewardsMultiplierBlocks_,
         uint64[] memory rewardsMultipliers_,
         uint64[] memory withdrawFeeBlocks_,
-        uint64[] memory withdrawFees_
+        uint64[] memory withdrawFees_,
+        address boosterPacksAddress_
     ) external onlyOwner returns (address newPool) {
-        // Create the Pool. // TO-DO Use CREATE2 instead of new
+        // Create the Pool.
         newPool = address(
-            new Pool(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_, rewardsMultiplierBlocks_, rewardsMultipliers_, withdrawFeeBlocks_, withdrawFees_)
+            new Pool(asset_, depositFeeRecipient_, baseRateTokensPerBlock_, depositFee_, rewardsMultiplierBlocks_, rewardsMultipliers_, withdrawFeeBlocks_, withdrawFees_, boosterPacksAddress_)
         );
 
-        /*assembly {
-            newPool := create2(0, add(code, 0x20), mload(code), salt)
+        /*bytes memory bytecode = type(Pool).creationCode;
+        bytes32 salt = keccak256(abi.encodePacked(asset_));
+        assembly {
+            newPool := create2(0, add(bytecode, 32), mload(bytecode), salt)
             if iszero(extcodesize(newPool)) {
                 revert(0, 0)
             }

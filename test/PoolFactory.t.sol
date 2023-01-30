@@ -4,6 +4,7 @@ pragma solidity ^0.8.16;
 import "test/mocks/Token1.sol";
 import "src/PoolFactory.sol";
 import "src/Pool.sol";
+import "src/BoosterPack.sol";
 
 import "forge-std/Test.sol";
 import { console } from "forge-std/console.sol";
@@ -11,6 +12,7 @@ import { console } from "forge-std/console.sol";
 contract PoolFactoryTest is Test {
     PoolFactory public poolFactory;
     Pool public pool;
+    BoosterPack public boosterPack;
     Token1 public token1;
 
     address public deployer = vm.addr(1500);
@@ -24,6 +26,7 @@ contract PoolFactoryTest is Test {
         vm.startPrank(deployer);
 
         token1 = new Token1();
+        boosterPack = new BoosterPack("");
         poolFactory = new PoolFactory();
 
         vm.stopPrank();
@@ -56,7 +59,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
 
         vm.stopPrank();
@@ -72,7 +76,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
         rewardsMultiplierBlocks_ = new uint64[](4);
         rewardsMultiplierBlocks_[0] = 100;
@@ -91,7 +96,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
         rewardsMultipliers_ = new uint64[](4);
         rewardsMultipliers_[0] = 100;
@@ -109,7 +115,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
         withdrawFeeBlocks_ = new uint64[](4);
         withdrawFeeBlocks_[0] = 0;
@@ -128,7 +135,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
         withdrawFees_ = new uint64[](4);
         withdrawFees_[0] = 15;
@@ -145,7 +153,8 @@ contract PoolFactoryTest is Test {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(boosterPack)
         );
         pool = Pool(poolAddress);
 

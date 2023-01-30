@@ -8,7 +8,10 @@ import "src/BoosterPack.sol";
 import { Pausable } from "@openzeppelin/security/Pausable.sol";
 import { Ownable } from "@openzeppelin/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/security/ReentrancyGuard.sol";
+import "@openzeppelin/utils/math/Math.sol";
 import "@openzeppelin/token/ERC20/extensions/ERC4626.sol";
+import "@openzeppelin/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/utils/introspection/ERC165.sol";
 
 /// Errors
 error Pool_RewardsMultiplierDoesNotExistError();
@@ -25,8 +28,13 @@ error Pool_WithdrawFeeChargeFailedError();
 error Pool_NotEnoughAmountDepositedError();
 error Pool_NotEnoughBalanceToDepositError();
 error Pool_AssetTransferFailedError();
+error Pool_OnlyOneActiveBPError();
+error Pool_BPDoesNotExistBPError();
+error Pool_ExpiredBPError();
 
-contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
+contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
+    using Math for uint64;
+
     /// @notice Struct to store the information about the Rewards Multiplier.
     struct RewardsMultiplier {
         uint64 blockNumber; // Block number of the RewardsMultiplier.
@@ -49,9 +57,12 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     struct UserData {
         uint64 accumRewards; // Accumulated rewards generated.
         uint64 accumRewardsBP; // Accumulated rewards generated from a Booster Pack.
+        uint64 claimableRewardsBP; // Claimable rewards generated from a Booster Pack.
         uint128 totalAmountDeposited; // Total amount deposited.
         uint128 activeBoosterPack; // ID of the active Booster Pack of the User, if there is any.
+        uint64 boosterPackActivationBlock; // Block when the Booster Pack of the User was activated, if there is any.
         uint32 nextDepositIdToRemove; // Next Deposit to be removed.
+        uint128 rewardsPerToken; // Rewards per token when the user made the first deposit.
         DepositData[] deposits; // Deposits of the User.
     }
 
@@ -85,11 +96,17 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     /// @notice Mapping to store the information from the Users.
     mapping(address => UserData) private _usersData;
 
+    /// @notice Array to store the users with burned BoosterPacks.
+    address[] private _usersWithBoosterPacks;
+
+    /// @notice Mapping to store the rewards per token per Booster Pack.
+    mapping(address => uint128) private _rewardsPerTokenBoosterPack;
+
     /// @dev Constant to avoid divisions resulting in 0
     uint128 public constant MULTIPLIER = 1000;
 
-    TheToken private _token;
-    BoosterPack private _boosterPacks;
+    ITheToken private _token;
+    IBoosterPack private _boosterPack;
 
     // *** Modifiers ***
 
@@ -119,7 +136,8 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
         uint64[] memory rewardsMultiplierBlocks_,
         uint64[] memory rewardsMultipliers_,
         uint64[] memory withdrawFeeBlocks_,
-        uint64[] memory withdrawFees_
+        uint64[] memory withdrawFees_,
+        address boosterPacksAddress_
     ) ERC4626(IERC20(asset_)) ERC20("Deposit Pool", "DP") {
         // Check if the length of the parameters it's the same, depending if it's for the RewardMultipliers or the WithdrawFees
         uint32 numberOfRewardMultipliers_ = uint32(rewardsMultiplierBlocks_.length);
@@ -136,6 +154,9 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
         // Set the value of the _depositAsset variable.
         _depositAsset = TheToken(asset_);
+
+        // Set the value of the _boosterPack variable.
+        _boosterPack = IBoosterPack(boosterPacksAddress_);
 
         // Set the value of the _depositFeeRecipient variable.
         _depositFeeRecipient = depositFeeRecipient_;
@@ -154,6 +175,32 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     }
 
     // *** Functions ***
+
+    // IERC135 Functions
+    function supportsInterface(bytes4 interfaceId) public view returns (bool) {
+        return interfaceId == type(IPool).interfaceId;
+    }
+
+    // IERC1155Receiver Functions
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external returns (bytes4) { 
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external returns (bytes4) { 
+        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
+    }
 
     // *** External Functions ***
 
@@ -221,7 +268,7 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
         rewardsMultiplierExists(rewardsMultiplierId_)
     {
         // Remove the rewards multiplier.
-        delete _rewardsMultipliers[rewardsMultiplierId_]; // TO-DO Check if leaving a gap could be avoidable or doesnt matter
+        delete _rewardsMultipliers[rewardsMultiplierId_]; 
     }
 
     /**
@@ -270,7 +317,7 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
         withdrawFeeExists(withdrawFeeId_)
     {
         // Remove the withdraw fee.
-        delete _withdrawFees[withdrawFeeId_]; // TO-DO Check if leaving a gap could be avoidable or doesnt matter
+        delete _withdrawFees[withdrawFeeId_]; 
     }
 
     /**
@@ -278,8 +325,11 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
      * @param amount_ Amount to be deposited.
      */
     function deposit(uint128 amount_) external whenNotPaused nonReentrant {
+        // Compute BoosterPack rewards if there is any.
+        _calcBPRewards();
+        
         // Update the rewards per token.
-        updateRewardsPerToken();
+        _updateRewardsPerToken();
 
         // Get the total deposit taking into account the deposit fee.
         uint32 totalFee_ = uint32(_depositFee * MULTIPLIER / 100);
@@ -303,9 +353,10 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
         // Update the total deposited amount.
         _totalAmount += depositedAmount_;
 
-        // Update the next Deposit to be removed if it's the first Deposit of the User.
+        // Update the next Deposit to be removed if it's the first Deposit of the User and the rewardsPerToken for the user.
         if (_usersData[msg.sender].deposits.length == 1) {
             _usersData[msg.sender].nextDepositIdToRemove = 0;
+            _usersData[msg.sender].rewardsPerToken = _rewardsPerToken;
         }
     }
 
@@ -314,8 +365,11 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
      * @param amount_ Amount to be withdrawed.
      */
     function withdraw(uint128 amount_) external nonReentrant {
+        // Compute BoosterPack rewards if there is any.
+        _calcBPRewards();
+
         // Update the rewards per token.
-        updateRewardsPerToken();
+        _updateRewardsPerToken();
 
         // Check if the user has deposited enough amount as the requested to withdraw.
         if (_usersData[msg.sender].totalAmountDeposited < amount_) revert Pool_NotEnoughAmountDepositedError();
@@ -378,33 +432,58 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
 
     /**
      * @dev Claim rewards for a specific user.
-     * @param depositor_ Address from the user.
+     * @param user_ Address from the user.
      */
-    function claimRewards(address depositor_) external nonReentrant {
+    function claimRewards(address user_) external nonReentrant {
+        // Check if the caller has an expired BoosterPack.
+        _checkBPExpired(user_);
+
         // Update the rewards per token.
-        updateRewardsPerToken();
+        _updateRewardsPerToken();
 
         // Check user's deposits in order to compute the total rewards accumulated.
-        uint64 userTotalRewards_ = uint64(_rewardsPerToken * _usersData[depositor_].totalAmountDeposited / MULTIPLIER);
-        uint64 userClaimableRewards = uint64(userTotalRewards_ - _usersData[depositor_].accumRewards);
+        uint64 userTotalRewards_ = uint64((_rewardsPerToken - _usersData[user_].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER);
+        uint64 userClaimableRewards_ = uint64(userTotalRewards_ - _usersData[user_].accumRewards);
 
         // Update the user's accumulated rewards.
-        _usersData[depositor_].accumRewards = userTotalRewards_;
+        _usersData[user_].accumRewards = userTotalRewards_;
 
         // Mint the tokens to the user.
-        _depositAsset.mint(depositor_, userClaimableRewards);
+        _depositAsset.mint(user_, userClaimableRewards_);
+        _depositAsset.mint(user_, _usersData[user_].claimableRewardsBP);
+
+        // Update the user's claimable rewards BP.
+        _usersData[user_].claimableRewardsBP = 0;
     }
 
     /**
      * @dev Burn a Booster Pack amount.
-     * @param id ID of the booster pack.
+     * @param id_ ID of the booster pack.
      */
-    function burnBP(uint32 id) external {
-        /*
-            1. Checks if the sender is the owner of the NFT.
-            2. Burns the Booster Pack.
-            3. Set up the active Booster Pack to the user.
-        */
+    function burnBP(uint32 id_) external nonReentrant {
+        // Check if the caller has an expired BoosterPack.
+        _checkBPExpired(msg.sender);
+
+        // Update the rewards per token.
+        _updateRewardsPerToken();
+        
+        // Check if the sender has already an active BoosterPack.
+        if (_usersData[msg.sender].activeBoosterPack != 0) revert Pool_OnlyOneActiveBPError();
+
+        // Check expiration date.
+        uint64 expirationDate = _boosterPack.getExpirationDate(id_);
+        if (expirationDate == 0) revert Pool_BPDoesNotExistBPError();
+        if (expirationDate < block.number) revert Pool_ExpiredBPError();
+
+        // Transfer the BoosterPack to the Pool and burn it.
+        _boosterPack.safeTransferFrom(msg.sender, address(this), id_, 1, "");
+        _boosterPack.burn(id_, 1);
+
+        // Set up the active Booster Pack to the user.
+        _usersData[msg.sender].activeBoosterPack = id_;
+        _usersData[msg.sender].boosterPackActivationBlock = uint64(block.number);
+
+        _usersWithBoosterPacks.push(msg.sender);
     }
 
     /**
@@ -486,11 +565,19 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     }
 
     /**
-     * @dev Getter for the user accumRewardsBP.
+     * @dev Getter for the user getUserAccumRewardsBP.
      * @param user_ Address of the user.
      */
     function getUserAccumRewardsBP(address user_) external view onlyOwner returns (uint64) {
         return _usersData[user_].accumRewardsBP;
+    }
+
+    /**
+     * @dev Getter for the user claimableRewardsBP.
+     * @param user_ Address of the user.
+     */
+    function getUserClaimableRewardsBP(address user_) external view onlyOwner returns (uint64) {
+        return _usersData[user_].claimableRewardsBP;
     }
 
     /**
@@ -507,6 +594,22 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
      */
     function getUserActiveBoosterPack(address user_) external view onlyOwner returns (uint128) {
         return _usersData[user_].activeBoosterPack;
+    }
+
+    /**
+     * @dev Getter for the _usersWithBoosterPacks array.
+     * @param id_ Index of the array.
+     */
+    function getUsersWithBoosterPacks(uint256 id_) external view onlyOwner returns (address) {
+        return _usersWithBoosterPacks[id_];
+    }
+
+    /**
+     * @dev Getter for the user _rewardsPerTokenBoosterPack.
+     * @param user_ Address of the user.
+     */
+    function getRewardsPerTokenBoosterPack(address user_) external view onlyOwner returns (uint128) {
+        return _rewardsPerTokenBoosterPack[user_];
     }
 
     /**
@@ -577,7 +680,7 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
     /**
      * @dev Updates the _rewardsPerToken variable.
      */
-    function updateRewardsPerToken() internal {
+    function _updateRewardsPerToken() internal {
         uint128 currentBlock_ = uint128(block.number);
 
         if (_totalAmount != 0) {
@@ -603,5 +706,113 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626 {
         }
 
         _lastBlockUpdated = currentBlock_;
+    }
+
+    /**
+     * @dev Checks if an active user's BoosterPack has already expired and updates it.
+     * @param user_ User to check from the BoosterPack status.
+     */
+    function _checkBPExpired(address user_) internal {
+        // Check if the user has an active BoosterPack.
+        uint128 userBP = _usersData[user_].activeBoosterPack;
+        if (userBP != 0) {
+            // Compute the pending rewards accrued from this BoosterPack. 
+            _calcBPRewardsUser(user_);
+            
+            // Check if the BoosterPack period has ended.
+            uint64 boosterPackDuration_ = _boosterPack.getDuration(uint32(userBP));
+            uint64 boosterPackActivationBlock_ = _usersData[user_].boosterPackActivationBlock;
+            if ((boosterPackDuration_ + boosterPackActivationBlock_) < block.number) {
+                // Set the user's active BoosterPack.
+                _usersData[user_].activeBoosterPack = 0;
+                _usersData[user_].boosterPackActivationBlock = 0;
+
+                // Delete the information from the user on the _usersWithBoosterPacks array.
+                for (uint256 i = 0; i < _usersWithBoosterPacks.length; i++) { 
+                    if (_usersWithBoosterPacks[i] == user_) {
+                        delete _usersWithBoosterPacks[i];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @dev Checks if there is any BoosterPack that has already expired and updates the rewards.
+     */
+    function _calcBPRewards() internal {
+        // Check every stored burned Booster Pack
+        for (uint256 i = 0; i < _usersWithBoosterPacks.length; i++) {
+            address user_ = _usersWithBoosterPacks[i];
+            uint128 userBP = _usersData[user_].activeBoosterPack;
+
+            // Compute the pending rewards accrued from this BoosterPack. 
+            _calcBPRewardsUser(user_);
+            
+            // Check if the BoosterPack period has ended.
+            uint64 boosterPackDuration_ = _boosterPack.getDuration(uint32(userBP));
+            uint64 boosterPackActivationBlock_ = _usersData[user_].boosterPackActivationBlock;
+            if ((boosterPackDuration_ + boosterPackActivationBlock_) < block.number) {
+                // Set the user's active BoosterPack.
+                _usersData[user_].activeBoosterPack = 0;
+                _usersData[user_].boosterPackActivationBlock = 0;
+            }
+        }
+    }
+
+    /**
+     * @dev Computes the user's rewards accrued from the BoosterPack.
+     * @param user_ User to compute rewards from the BoosterPack.
+     */
+    function _calcBPRewardsUser(address user_) internal {
+        // Get BoosterPack data.
+        uint32 boosterPackId_ = uint32(_usersData[user_].activeBoosterPack);
+        uint64 boosterPackDuration_ = _boosterPack.getDuration(boosterPackId_);
+        uint32 boosterPackMultiplier_ = _boosterPack.getMultiplier(boosterPackId_);
+        uint64 boosterPackActivationBlock_ = _usersData[user_].boosterPackActivationBlock;
+
+        _updateRewardsPerTokenBP(user_, boosterPackActivationBlock_, boosterPackDuration_);
+
+        // Compute the user's rewards accrued during the period when the BoosterPack was active.
+        uint64 userTotalRewardsBP_ = uint64((_rewardsPerTokenBoosterPack[user_] - _usersData[msg.sender].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER);
+        uint64 userClaimableRewardsBP_ = uint64((userTotalRewardsBP_ * boosterPackMultiplier_)- _usersData[user_].claimableRewardsBP);
+
+        // Update the accumulated rewards from BoosterPacks of the user.
+        _usersData[user_].claimableRewardsBP += userClaimableRewardsBP_;
+        _usersData[user_].accumRewardsBP += userClaimableRewardsBP_;
+    }
+
+    /**
+     * @dev Updates the _rewardsPerTokenBoosterPack mapping.
+     * @param user_ User to update the _rewardsPerTokenBoosterPack.
+     * @param boosterPackActivationBlock_ Activation block of the BoosterPack.
+     * @param boosterPackDuration_ Duration of the BoosterPack.
+     */
+    function _updateRewardsPerTokenBP(address user_, uint64 boosterPackActivationBlock_, uint64 boosterPackDuration_) internal {
+        uint64 currentBlock_ = uint64(block.number);
+        uint64 boosterPackBlock_ = uint64(currentBlock_.min(boosterPackActivationBlock_ + boosterPackDuration_));
+        uint128 _lastBlockUpdatedBP = _lastBlockUpdated;
+
+        if (_totalAmount != 0) {
+            // Check current interval's rewards multiplier
+            for (uint256 i = 0; i < _rewardsMultipliers.length; i++) {
+                RewardsMultiplier memory rewardMultiplier_;
+                rewardMultiplier_ = _rewardsMultipliers[i];
+
+                // If the current block fit's into the rewards multiplier period we use it's multiplier and break.
+                if (boosterPackBlock_ <= rewardMultiplier_.blockNumber) {
+                    _rewardsPerTokenBoosterPack[user_] += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier)
+                        * (boosterPackBlock_ - _lastBlockUpdatedBP) * MULTIPLIER / _totalAmount;
+                    break;
+                }
+                // If the _lastBlockUpdatedBP block fit's into the rewards multiplier period we use it's multiplier and continue until we reach the currentBlock.
+                else if (_lastBlockUpdatedBP <= rewardMultiplier_.blockNumber) {
+                    _rewardsPerTokenBoosterPack[user_] += (_baseRateTokensPerBlock * rewardMultiplier_.multiplier)
+                        * (rewardMultiplier_.blockNumber - _lastBlockUpdatedBP) * MULTIPLIER / _totalAmount;
+                    _lastBlockUpdatedBP = rewardMultiplier_.blockNumber + 1;
+                }
+            }
+        }
     }
 }

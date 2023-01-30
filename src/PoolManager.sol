@@ -82,7 +82,8 @@ contract PoolManager is IPoolManager, Ownable {
             rewardsMultiplierBlocks_,
             rewardsMultipliers_,
             withdrawFeeBlocks_,
-            withdrawFees_
+            withdrawFees_,
+            address(_boosterPack)
         );
 
         // Add the Pool to the array of pools.
