@@ -56,7 +56,10 @@ contract BoosterPack is ERC1155, IBoosterPack, Ownable {
      * @param expirationDate_ Expiration date of booster packs.
      * @param multiplier_ multiplier of booster packs.
      */
-    function setAttributes(uint256 id_, uint64 duration_, uint64 expirationDate_, uint32 multiplier_) external onlyOwner {
+    function setAttributes(uint256 id_, uint64 duration_, uint64 expirationDate_, uint32 multiplier_)
+        external
+        onlyOwner
+    {
         // Change the attributes of the boosterPack.
         _boosterPacks[uint32(id_)].duration = duration_;
         _boosterPacks[uint32(id_)].expirationDate = expirationDate_;
@@ -72,7 +75,14 @@ contract BoosterPack is ERC1155, IBoosterPack, Ownable {
      * @param expirationDate_ Expiration date of booster packs.
      * @param multiplier_ multiplier of booster packs.
      */
-    function mint(address to_, uint256 id_, uint256 amount_, uint64 duration_, uint64 expirationDate_, uint32 multiplier_) external {
+    function mint(
+        address to_,
+        uint256 id_,
+        uint256 amount_,
+        uint64 duration_,
+        uint64 expirationDate_,
+        uint32 multiplier_
+    ) external {
         // Check if the address is allowed to mint.
         if (!_whitelistedAddrBP[msg.sender]) revert BoosterPack_AddressNotAllowedToMintError();
 

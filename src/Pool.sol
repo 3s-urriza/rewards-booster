@@ -193,13 +193,10 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
     }
 
     // IERC1155Receiver Functions
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external returns (bytes4) { 
+    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
+        external
+        returns (bytes4)
+    {
         return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 
@@ -209,7 +206,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external returns (bytes4) { 
+    ) external returns (bytes4) {
         return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
 
@@ -279,7 +276,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         rewardsMultiplierExists(rewardsMultiplierId_)
     {
         // Remove the rewards multiplier.
-        delete _rewardsMultipliers[rewardsMultiplierId_]; 
+        delete _rewardsMultipliers[rewardsMultiplierId_];
     }
 
     /**
@@ -328,7 +325,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         withdrawFeeExists(withdrawFeeId_)
     {
         // Remove the withdraw fee.
-        delete _withdrawFees[withdrawFeeId_]; 
+        delete _withdrawFees[withdrawFeeId_];
     }
 
     /**
@@ -338,7 +335,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
     function deposit(uint128 amount_) external whenNotPaused nonReentrant {
         // Compute BoosterPack rewards if there is any.
         _calcBPRewards();
-        
+
         // Update the rewards per token.
         _updateRewardsPerToken();
 
@@ -449,7 +446,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
      * @param user_ Address from the user.
      */
     function claimRewards(address user_) external nonReentrant {
-        // If the Pool is paused we don't update anything regarding rewards.        
+        // If the Pool is paused we don't update anything regarding rewards.
         if (!_paused) {
             // Check if the caller has an expired BoosterPack.
             _checkBPExpired(user_);
@@ -459,7 +456,9 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         }
 
         // Check user's deposits in order to compute the total rewards accumulated.
-        uint64 userTotalRewards_ = uint64((_rewardsPerToken - _usersData[user_].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER);
+        uint64 userTotalRewards_ = uint64(
+            (_rewardsPerToken - _usersData[user_].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER
+        );
         uint64 userClaimableRewards_ = uint64(userTotalRewards_ - _usersData[user_].accumRewards);
 
         // Update the user's accumulated rewards.
@@ -483,7 +482,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
 
         // Update the rewards per token.
         _updateRewardsPerToken();
-        
+
         // Check if the sender has already an active BoosterPack.
         if (_usersData[msg.sender].activeBoosterPack != 0) revert Pool_OnlyOneActiveBPError();
 
@@ -497,7 +496,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         _boosterPack.burn(id_, 1);
 
         // Set up the active Booster Pack to the user.
-        _usersData[msg.sender].activeBoosterPack = id_; 
+        _usersData[msg.sender].activeBoosterPack = id_;
         _usersData[msg.sender].boosterPackActivationBlock = uint64(block.number);
 
         _usersWithBoosterPacks.push(msg.sender);
@@ -761,9 +760,9 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         // Check if the user has an active BoosterPack.
         uint128 userBP = _usersData[user_].activeBoosterPack;
         if (userBP != 0) {
-            // Compute the pending rewards accrued from this BoosterPack. 
+            // Compute the pending rewards accrued from this BoosterPack.
             _calcBPRewardsUser(user_);
-            
+
             // Check if the BoosterPack period has ended.
             uint64 boosterPackDuration_ = _boosterPack.getDuration(uint32(userBP));
             uint64 boosterPackActivationBlock_ = _usersData[user_].boosterPackActivationBlock;
@@ -773,7 +772,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
                 _usersData[user_].boosterPackActivationBlock = 0;
 
                 // Delete the information from the user on the _usersWithBoosterPacks array.
-                for (uint256 i = 0; i < _usersWithBoosterPacks.length; i++) { 
+                for (uint256 i = 0; i < _usersWithBoosterPacks.length; i++) {
                     if (_usersWithBoosterPacks[i] == user_) {
                         delete _usersWithBoosterPacks[i];
                         break;
@@ -792,9 +791,9 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
             address user_ = _usersWithBoosterPacks[i];
             uint128 userBP = _usersData[user_].activeBoosterPack;
 
-            // Compute the pending rewards accrued from this BoosterPack. 
+            // Compute the pending rewards accrued from this BoosterPack.
             _calcBPRewardsUser(user_);
-            
+
             // Check if the BoosterPack period has ended.
             uint64 boosterPackDuration_ = _boosterPack.getDuration(uint32(userBP));
             uint64 boosterPackActivationBlock_ = _usersData[user_].boosterPackActivationBlock;
@@ -820,8 +819,12 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         _updateRewardsPerTokenBP(user_, boosterPackActivationBlock_, boosterPackDuration_);
 
         // Compute the user's rewards accrued during the period when the BoosterPack was active.
-        uint64 userTotalRewardsBP_ = uint64((_rewardsPerTokenBoosterPack[user_] - _usersData[msg.sender].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER);
-        uint64 userClaimableRewardsBP_ = uint64((userTotalRewardsBP_ * boosterPackMultiplier_)- _usersData[user_].claimableRewardsBP);
+        uint64 userTotalRewardsBP_ = uint64(
+            (_rewardsPerTokenBoosterPack[user_] - _usersData[msg.sender].rewardsPerToken)
+                * _usersData[user_].totalAmountDeposited / MULTIPLIER
+        );
+        uint64 userClaimableRewardsBP_ =
+            uint64((userTotalRewardsBP_ * boosterPackMultiplier_) - _usersData[user_].claimableRewardsBP);
 
         // Update the accumulated rewards from BoosterPacks of the user.
         _usersData[user_].claimableRewardsBP += userClaimableRewardsBP_;
@@ -834,7 +837,9 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
      * @param boosterPackActivationBlock_ Activation block of the BoosterPack.
      * @param boosterPackDuration_ Duration of the BoosterPack.
      */
-    function _updateRewardsPerTokenBP(address user_, uint64 boosterPackActivationBlock_, uint64 boosterPackDuration_) internal {
+    function _updateRewardsPerTokenBP(address user_, uint64 boosterPackActivationBlock_, uint64 boosterPackDuration_)
+        internal
+    {
         uint64 currentBlock_ = uint64(block.number);
         uint64 boosterPackBlock_ = uint64(currentBlock_.min(boosterPackActivationBlock_ + boosterPackDuration_));
         uint128 _lastBlockUpdatedBP = _lastBlockUpdated;

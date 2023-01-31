@@ -382,7 +382,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 100);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 900);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -415,7 +415,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 100);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 900);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -469,7 +469,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 95);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 0);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -499,7 +499,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 144);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 75);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -532,7 +532,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 164);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 255);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -567,7 +567,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 154);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 255);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -602,7 +602,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 160);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 42);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -643,7 +643,7 @@ contract PoolTest is
         assertEq(token1.balanceOf(deployer), 95);
 
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 0);
         assertEq(pool.getUserActiveBoosterPack(user1), 0);
@@ -674,7 +674,7 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 217_777);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 97_999);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
@@ -704,7 +704,7 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 548_887);
         assertEq(pool.getLastBlockUpdated(), 150);
         assertEq(pool.getUserAccumRewards(user1), 246_999);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
@@ -738,11 +738,11 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 108_888);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 0);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
         assertEq(pool.getUserAccumRewards(user2), 48_999);
-        assertEq(pool.getUserAccumRewardsBP(user2), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user2), 0);
         assertEq(pool.getUserClaimableRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
@@ -778,11 +778,11 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 274_443);
         assertEq(pool.getLastBlockUpdated(), 150);
         assertEq(pool.getUserAccumRewards(user1), 123_499);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
         assertEq(pool.getUserAccumRewards(user2), 48_999);
-        assertEq(pool.getUserAccumRewardsBP(user2), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user2), 0);
         assertEq(pool.getUserClaimableRewardsBP(user2), 0);
         assertEq(pool.getUserTotalAmountDeposited(user2), 450);
 
@@ -977,14 +977,14 @@ contract PoolTest is
         assertEq(pool.getRewardsPerToken(), 217_777);
         assertEq(pool.getLastBlockUpdated(), 50);
         assertEq(pool.getUserAccumRewards(user1), 97_999);
-        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);
         assertEq(pool.getUserClaimableRewardsBP(user1), 0);
         assertEq(pool.getUserTotalAmountDeposited(user1), 450);
 
         vm.stopPrank();
     }
 
-    function test_burnBP() public { 
+    function test_burnBP() public {
         // Set up
         vm.startPrank(deployer);
 
@@ -1043,7 +1043,7 @@ contract PoolTest is
         vm.stopPrank();
     }
 
-    function test_pausePool() public { 
+    function test_pausePool() public {
         // Unhappy path Nº1 - Trying to pause the Pool without being the Owner.
         vm.startPrank(user1);
 
@@ -1061,7 +1061,7 @@ contract PoolTest is
         vm.stopPrank();
     }
 
-    function test_unpausePool() public { 
+    function test_unpausePool() public {
         // Set up
         vm.startPrank(deployer);
 
