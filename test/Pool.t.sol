@@ -82,6 +82,56 @@ contract PoolTest is
 
     // TO-DO Separate from Pool Logic
 
+    function test_constructor() public {
+        // Set the initial data
+        // RewardsMultiplier
+        uint64[] memory rewardsMultiplierBlocks = new uint64[](4);
+        rewardsMultiplierBlocks[0] = 100;
+        rewardsMultiplierBlocks[1] = 200;
+        rewardsMultiplierBlocks[2] = 300;
+        rewardsMultiplierBlocks[3] = 400;
+        uint64[] memory rewardsMultipliers = new uint64[](4);
+        rewardsMultipliers[0] = 100;
+        rewardsMultipliers[1] = 50;
+        rewardsMultipliers[2] = 25;
+        rewardsMultipliers[3] = 10;
+
+        // WithdrawFees
+        uint64[] memory withdrawFeeBlocks = new uint64[](4);
+        withdrawFeeBlocks[0] = 0;
+        withdrawFeeBlocks[1] = 100;
+        withdrawFeeBlocks[2] = 1000;
+        withdrawFeeBlocks[3] = 10_000;
+        uint64[] memory withdrawFees = new uint64[](4);
+        withdrawFees[0] = 15;
+        withdrawFees[1] = 10;
+        withdrawFees[2] = 5;
+        withdrawFees[3] = 2;
+
+        pool =
+        new Pool(address(token1), deployer, 20, 10, rewardsMultiplierBlocks, rewardsMultipliers, withdrawFeeBlocks, withdrawFees, address(boosterPack));
+
+        assertEq(pool.getBaseRateTokensPerBlock(), 20);
+        assertEq(pool.getDepositFee(), 10);
+        assertEq(pool.getDepositFeeRecipient(), deployer);
+        assertEq(pool.getRewardsMultiplierBlockNumber(0), 100);
+        assertEq(pool.getRewardsMultiplierBlockNumber(1), 200);
+        assertEq(pool.getRewardsMultiplierBlockNumber(2), 300);
+        assertEq(pool.getRewardsMultiplierBlockNumber(3), 400);
+        assertEq(pool.getRewardsMultiplier(0), 100);
+        assertEq(pool.getRewardsMultiplier(1), 50);
+        assertEq(pool.getRewardsMultiplier(2), 25);
+        assertEq(pool.getRewardsMultiplier(3), 10);
+        assertEq(pool.getWithdrawFeeBlockNumber(0), 0);
+        assertEq(pool.getWithdrawFeeBlockNumber(1), 100);
+        assertEq(pool.getWithdrawFeeBlockNumber(2), 1000);
+        assertEq(pool.getWithdrawFeeBlockNumber(3), 10_000);
+        assertEq(pool.getWithdrawFee(0), 15);
+        assertEq(pool.getWithdrawFee(1), 10);
+        assertEq(pool.getWithdrawFee(2), 5);
+        assertEq(pool.getWithdrawFee(3), 2);
+    }
+
     function test_updateBaseRateTokensPerBlock() public {
         // Unhappy path Nº1 - Trying to update the variable without being the Owner.
         vm.startPrank(user1);

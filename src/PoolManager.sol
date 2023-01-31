@@ -36,6 +36,9 @@ contract PoolManager is IPoolManager, Ownable {
      * @param token_ Token address to be whitelisted.
      */
     function addWhitelistedToken(address token_) external onlyOwner {
+        // Check if _token implements IERC20
+        
+        
         // Add the token to the _whitelistedTokens mapping.
         _whitelistedTokens[token_] = true;
     }

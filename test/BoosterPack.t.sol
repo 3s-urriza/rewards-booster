@@ -71,10 +71,6 @@ contract BoosterPackTest is Test {
     }
 
     function test_setAttributes() public {
-        // Set up
-        boosterPack.addWhitelistedAddrBP(deployer);
-        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
-        
         // Unhappy path Nº1 - Trying to change a BoosterPack attributes without being the Owner.
         vm.startPrank(user1);
 
@@ -85,6 +81,9 @@ contract BoosterPackTest is Test {
 
         // Happy path - Being the Owner.
         vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.mint(deployer, 1, 1, 7 days, uint64(block.timestamp + 30 days), 2);
 
         boosterPack.setAttributes(1, 8 days, uint64(block.timestamp + 60 days), 3);
         assertEq(boosterPack.getDuration(1), 8 days);

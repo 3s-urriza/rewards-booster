@@ -497,7 +497,7 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
         _boosterPack.burn(id_, 1);
 
         // Set up the active Booster Pack to the user.
-        _usersData[msg.sender].activeBoosterPack = id_;
+        _usersData[msg.sender].activeBoosterPack = id_; 
         _usersData[msg.sender].boosterPackActivationBlock = uint64(block.number);
 
         _usersWithBoosterPacks.push(msg.sender);
@@ -539,6 +539,13 @@ contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
      */
     function getDepositFee() external view onlyOwner returns (uint128) {
         return _depositFee;
+    }
+
+    /**
+     * @dev Getter for the _depositFeeRecipient variable.
+     */
+    function getDepositFeeRecipient() external view onlyOwner returns (address) {
+        return _depositFeeRecipient;
     }
 
     /**

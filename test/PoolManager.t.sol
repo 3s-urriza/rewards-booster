@@ -79,6 +79,14 @@ contract PoolManagerTest is Test {
         vm.stopPrank();
     }
 
+    function test_constructor() public {
+        poolManager = new PoolManager();
+        boosterPack = poolManager.getBoosterPack();
+
+        assertEq(poolManager.getPools().length, 0);
+        assertEq(poolManager.getWhitelistedToken(address(token1)), false);
+    }
+
     function test_addWhitelistedToken() public {
         // Unhappy path Nº1 - Trying to whitelist a token without being the Owner.
         vm.startPrank(user1);
