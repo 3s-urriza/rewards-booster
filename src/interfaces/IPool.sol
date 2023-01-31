@@ -28,5 +28,7 @@ interface IPool {
 
     function burnBP(uint32) external;
 
-    function pausePool() external;
+    function pause() external;
+
+    function unpause() external;
 }

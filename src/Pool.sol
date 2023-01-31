@@ -5,7 +5,6 @@ import "src/interfaces/IPool.sol";
 import "src/TheToken.sol";
 import "src/BoosterPack.sol";
 
-import { Pausable } from "@openzeppelin/security/Pausable.sol";
 import { Ownable } from "@openzeppelin/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/security/ReentrancyGuard.sol";
 import "@openzeppelin/utils/math/Math.sol";
@@ -31,8 +30,9 @@ error Pool_AssetTransferFailedError();
 error Pool_OnlyOneActiveBPError();
 error Pool_BPDoesNotExistBPError();
 error Pool_ExpiredBPError();
+error Pool_Paused();
 
-contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
+contract Pool is IPool, Ownable, ReentrancyGuard, ERC4626, IERC1155Receiver {
     using Math for uint64;
 
     /// @notice Struct to store the information about the Rewards Multiplier.
@@ -102,6 +102,9 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
     /// @notice Mapping to store the rewards per token per Booster Pack.
     mapping(address => uint128) private _rewardsPerTokenBoosterPack;
 
+    /// @notice Variable to know if the Pool is paused.
+    bool private _paused;
+
     /// @dev Constant to avoid divisions resulting in 0
     uint128 public constant MULTIPLIER = 1000;
 
@@ -125,6 +128,14 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
      */
     modifier withdrawFeeExists(uint32 withdrawFeeId_) {
         if (withdrawFeeId_ > _withdrawFees.length) revert Pool_WithdrawFeeDoesNotExistError();
+        _;
+    }
+
+    /**
+     * @dev Modifier that checks if a WithdrawFee exists
+     */
+    modifier whenNotPaused() {
+        if (_paused) revert Pool_Paused();
         _;
     }
 
@@ -365,11 +376,14 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
      * @param amount_ Amount to be withdrawed.
      */
     function withdraw(uint128 amount_) external nonReentrant {
-        // Compute BoosterPack rewards if there is any.
-        _calcBPRewards();
+        // If the Pool is paused we don't update anything regarding rewards.
+        if (!_paused) {
+            // Compute BoosterPack rewards if there is any.
+            _calcBPRewards();
 
-        // Update the rewards per token.
-        _updateRewardsPerToken();
+            // Update the rewards per token.
+            _updateRewardsPerToken();
+        }
 
         // Check if the user has deposited enough amount as the requested to withdraw.
         if (_usersData[msg.sender].totalAmountDeposited < amount_) revert Pool_NotEnoughAmountDepositedError();
@@ -435,11 +449,14 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
      * @param user_ Address from the user.
      */
     function claimRewards(address user_) external nonReentrant {
-        // Check if the caller has an expired BoosterPack.
-        _checkBPExpired(user_);
+        // If the Pool is paused we don't update anything regarding rewards.        
+        if (!_paused) {
+            // Check if the caller has an expired BoosterPack.
+            _checkBPExpired(user_);
 
-        // Update the rewards per token.
-        _updateRewardsPerToken();
+            // Update the rewards per token.
+            _updateRewardsPerToken();
+        }
 
         // Check user's deposits in order to compute the total rewards accumulated.
         uint64 userTotalRewards_ = uint64((_rewardsPerToken - _usersData[user_].rewardsPerToken) * _usersData[user_].totalAmountDeposited / MULTIPLIER);
@@ -460,7 +477,7 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
      * @dev Burn a Booster Pack amount.
      * @param id_ ID of the booster pack.
      */
-    function burnBP(uint32 id_) external nonReentrant {
+    function burnBP(uint32 id_) external whenNotPaused nonReentrant {
         // Check if the caller has an expired BoosterPack.
         _checkBPExpired(msg.sender);
 
@@ -489,9 +506,23 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
     /**
      * @dev Pauses the Pool.
      */
-    function pausePool() external onlyOwner {
+    function pause() external onlyOwner {
         // Pause the Pool.
-        _pause();
+        _paused = true;
+
+        // Compute BoosterPack rewards if there is any.
+        _calcBPRewards();
+
+        // Update the rewards per token.
+        _updateRewardsPerToken();
+    }
+
+    /**
+     * @dev Unpauses the Pool.
+     */
+    function unpause() external onlyOwner {
+        // Unpause the Pool.
+        _paused = false;
     }
 
     // *** Getters ***
@@ -522,6 +553,13 @@ contract Pool is IPool, Pausable, Ownable, ReentrancyGuard, ERC4626, IERC1155Rec
      */
     function getLastBlockUpdated() external view onlyOwner returns (uint128) {
         return _lastBlockUpdated;
+    }
+
+    /**
+     * @dev Getter for the _paused variable.
+     */
+    function getPaused() external view onlyOwner returns (bool) {
+        return _paused;
     }
 
     /**

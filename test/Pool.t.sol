@@ -378,6 +378,24 @@ contract PoolTest is
         vm.stopPrank();
     }
 
+    function test_deposit_poolPaused() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        pool.pause();
+
+        vm.stopPrank();
+
+        // Unhappy path Nº1 - The pool is paused.
+        vm.startPrank(user1);
+        token1.approve(address(pool), 500);
+
+        vm.expectRevert(abi.encodeWithSignature("Pool_Paused()"));
+        pool.deposit(500);
+
+        vm.stopPrank();
+    }
+
     function test_withdraw() public {
         // Set up
         vm.startPrank(user1);
@@ -545,6 +563,43 @@ contract PoolTest is
         assertEq(pool.getUserDepositAmount(user1, 1), 0);
         assertEq(pool.getUserDepositBlockNumber(user1, 2), 1050);
         assertEq(pool.getUserDepositAmount(user1, 2), 42);
+
+        vm.stopPrank();
+    }
+
+    function test_withdraw_poolPaused() public {
+        // Set up
+        vm.startPrank(user1);
+        token1.approve(address(pool), 500);
+        pool.deposit(500);
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+        pool.pause();
+        vm.stopPrank();
+
+        // Happy path
+        vm.startPrank(user1);
+        token1.approve(address(pool), 500);
+        vm.roll(250);
+        pool.withdraw(450);
+
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 905);
+        assertEq(token1.balanceOf(address(pool)), 0);
+        assertEq(token1.balanceOf(deployer), 95);
+
+        assertEq(pool.getUserAccumRewards(user1), 0);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 0);
+        assertEq(pool.getUserActiveBoosterPack(user1), 0);
+        assertEq(pool.getUserNextDepositIdToRemove(user1), 0);
+        assertEq(pool.getUserDepositBlockNumber(user1, 0), 1);
+        assertEq(pool.getUserDepositAmount(user1, 0), 0);
 
         vm.stopPrank();
     }
@@ -846,6 +901,39 @@ contract PoolTest is
         vm.stopPrank();
     }
 
+    function test_claimRewards_poolPaused() public {
+        // Set up
+        vm.startPrank(user1);
+        token1.approve(address(pool), 500);
+        pool.deposit(500);
+        vm.roll(50);
+        vm.stopPrank();
+
+        vm.startPrank(deployer);
+        pool.pause();
+        vm.stopPrank();
+
+        vm.roll(150);
+
+        // Happy path - Get rewards from block 50
+        pool.claimRewards(user1);
+
+        vm.startPrank(deployer);
+
+        assertEq(token1.balanceOf(user1), 98_499);
+        assertEq(token1.balanceOf(address(pool)), 450);
+        assertEq(token1.balanceOf(deployer), 50);
+
+        assertEq(pool.getRewardsPerToken(), 217_777);
+        assertEq(pool.getLastBlockUpdated(), 50);
+        assertEq(pool.getUserAccumRewards(user1), 97_999);
+        assertEq(pool.getUserAccumRewardsBP(user1), 0);        
+        assertEq(pool.getUserClaimableRewardsBP(user1), 0);
+        assertEq(pool.getUserTotalAmountDeposited(user1), 450);
+
+        vm.stopPrank();
+    }
+
     function test_burnBP() public { 
         // Set up
         vm.startPrank(deployer);
@@ -885,5 +973,66 @@ contract PoolTest is
         vm.stopPrank();
     }
 
-    function test_pausePool() public { }
+    function test_burnBP_poolPaused() public {
+        // Set up
+        vm.startPrank(deployer);
+
+        boosterPack.addWhitelistedAddrBP(deployer);
+        boosterPack.addWhitelistedAddrBP(address(pool));
+        boosterPack.mint(user1, 1, 2, 50, 100, 3);
+        pool.pause();
+
+        vm.stopPrank();
+
+        // Unhappy path Nº1 - The pool is paused.
+        vm.startPrank(user1);
+
+        vm.expectRevert(abi.encodeWithSignature("Pool_Paused()"));
+        pool.burnBP(1);
+
+        vm.stopPrank();
+    }
+
+    function test_pausePool() public { 
+        // Unhappy path Nº1 - Trying to pause the Pool without being the Owner.
+        vm.startPrank(user1);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        pool.pause();
+
+        vm.stopPrank();
+
+        // Happy path - Being the Owner
+        vm.startPrank(deployer);
+
+        pool.pause();
+        assertEq(pool.getPaused(), true);
+
+        vm.stopPrank();
+    }
+
+    function test_unpausePool() public { 
+        // Set up
+        vm.startPrank(deployer);
+
+        pool.pause();
+
+        vm.stopPrank();
+
+        // Unhappy path Nº1 - Trying to unpause the Pool without being the Owner.
+        vm.startPrank(user1);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        pool.unpause();
+
+        vm.stopPrank();
+
+        // Happy path - Being the Owner
+        vm.startPrank(deployer);
+
+        pool.unpause();
+        assertEq(pool.getPaused(), false);
+
+        vm.stopPrank();
+    }
 }
